@@ -1,0 +1,88 @@
+set PREVIEW_MODE "JPN n3DS Filtering Disabler\n \nMade by windows-server-2003"
+
+set MSG_ERR_O3DS "O3DS is not supported"
+set MSG_ERR_UNSUPPORTED_GM9VER "Your GodMode9 is outdated\nPlease update to the latest version"
+set MSG_CONFIRM_NONJPN_REGION "Non-JPN region detected\n \nDo you want to proceed anyway?"
+set MSG_ERR_NO_SAVEDATA "Browser savedata not found\n \nMake sure you have opened the browser at least once"
+set MSG_ERR_FAILED_TO_MOUNT "Invalid browser savedata(failed to mount)"
+set MSG_ASK_ENABLE "Filtering is currently disabled\n \nDo you want to enable it?"
+set MSG_ASK_DISABLE "Filtering is currently enabled\n \nDo you want to disable it?"
+set MSG_ERR_UNKNOWN_VALUE "Invalid browser savedata\n0x3090:"
+set MSG_PERMISSION_DENIED "Permission denied"
+set MSG_SUCCESS_DISABLING "Successfully disabled the filtering"
+set MSG_SUCCESS_ENABLING "Successfully enabled the filtering"
+
+# https://www.3dbrew.org/wiki/Internet_Browser#0x000200BB_savedata
+# It seems that 0x3090-th byte of partitionA.bin is 00 by default and 01 if the filtering is disabled
+set SAVE_PATH 1:/data/$[SYSID0]/sysdata/000200bb/00000000
+
+# Version check
+if chk $[GM9VER] "v1.9.1" # v1.9.1 and below doesn't correct CMAC when writing to mounted DISA/DIFF
+	echo $[MSG_ERR_UNSUPPORTED_GM9VER]
+	goto FAIL
+elif chk $[GM9VER] "v1.9.0"
+	echo $[MSG_ERR_UNSUPPORTED_GM9VER]
+	goto FAIL
+elif chk $[GM9VER] "v1.8.0" # v1.8.0 and below doesn't support DISA/DIFF mounting
+	echo $[MSG_ERR_UNSUPPORTED_GM9VER]
+	goto FAIL
+elif chk $[GM9VER] "v1.7.1"
+	echo $[MSG_ERR_UNSUPPORTED_GM9VER]
+	goto FAIL
+elif chk $[GM9VER] "v1.7.0"
+	echo $[MSG_ERR_UNSUPPORTED_GM9VER]
+	goto FAIL
+end # I don't care below this
+
+# Precheck
+if chk $[ONTYPE] O3DS
+	echo $[MSG_ERR_O3DS]
+	goto FAIL
+end
+if not chk $[REGION] JPN
+	ask -s $[MSG_CONFIRM_NONJPN_REGION]
+end
+if not find $[SAVE_PATH] NULL
+	echo $[MSG_ERR_NO_SAVEDATA]
+	goto FAIL
+end
+
+imgumount
+if not imgmount $[SAVE_PATH]
+	echo $[MSG_ERR_FAILED_TO_MOUNT]
+	goto FAIL
+end
+
+fget D:/partitionA.bin@3090:1 FILTERING_DISABLED_VALUE
+if chk $[FILTERING_DISABLED_VALUE] 00 # Currently enabled
+	set ASK_SENTENCE $[MSG_ASK_DISABLE]
+	set SUCCESSMSG $[MSG_SUCCESS_DISABLING]
+	set WRITE_VALUE 01
+elif chk $[FILTERING_DISABLED_VALUE] 01 # Currently disabled
+	set ASK_SENTENCE $[MSG_ASK_ENABLE]
+	set SUCCESSMSG $[MSG_SUCCESS_ENABLING]
+	set WRITE_VALUE 00
+else
+	echo $[MSG_ERR_UNKNOWN_VALUE]$[FILTERING_DISABLED_VALUE]
+	goto FAIL
+end
+if not ask $[ASK_SENTENCE]
+	goto FAIL
+end
+
+# Acquire permission
+if not allow $[SAVE_PATH]
+	echo $[MSG_PERMISSION_DENIED]
+	goto FAIL
+end
+
+fset D:/partitionA.bin@3090 $[WRITE_VALUE]
+goto EXIT
+
+@FAIL
+imgumount
+chk -s a b
+
+@EXIT
+imgumount
+
