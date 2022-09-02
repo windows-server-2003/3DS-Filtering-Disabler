@@ -1,12 +1,12 @@
-set PREVIEW_MODE "JPN n3DS Filtering Disabler\n \nMade by windows-server-2003"
+set PREVIEW_MODE "JPN n3DS Filtering Disabler\n \nMade by github/windows-server-2003\nForked by github/amplesand"
 
 set MSG_ERR_O3DS "O3DS is not supported."
-set MSG_ERR_UNSUPPORTED_GM9VER "Your GodMode9 is outdated.\nPlease update to the latest version."
-set MSG_CONFIRM_NONJPN_REGION "Non-JPN region detected.\n \nDo you want to proceed anyway?"
-set MSG_ERR_NO_SAVEDATA "Browser savedata not found.\n \nMake sure you have opened the browser at least once."
+set MSG_ASK_GM9VER "This script requires GodMode9 v1.9.2pre1 or above.\nYou are running GodMode9 $[GM9VER].\nDo you wish to procede?"
+set MSG_CONFIRM_NONJPN_REGION "Non-JPN region detected.\n \nDo you wish to procede regardless?"
+set MSG_ERR_NO_SAVEDATA "Browser savedata not found.\n \nVerify that you have opened the browser at least once."
 set MSG_ERR_FAILED_TO_MOUNT "Invalid browser savedata. (failed to mount)"
-set MSG_ASK_ENABLE "The browser filter is currently disabled.\n \nDo you want to enable it?"
-set MSG_ASK_DISABLE "The browser filter is currently enabled.\n \nDo you want to disable it?"
+set MSG_ASK_ENABLE "The browser filter is currently disabled.\n \nDo you wish to enable it?"
+set MSG_ASK_DISABLE "The browser filter is currently enabled.\n \nDo you wish to disable it?"
 set MSG_ERR_UNKNOWN_VALUE "Invalid browser savedata.\n0x3090:"
 set MSG_PERMISSION_DENIED "Permission denied."
 set MSG_SUCCESS_DISABLING "Successfully disabled the browser filter."
@@ -16,23 +16,8 @@ set MSG_SUCCESS_ENABLING "Successfully enabled the browser filter."
 # It seems that 0x3090-th byte of partitionA.bin is 00 by default, and 01 if the browser filter is disabled.
 set SAVE_PATH 1:/data/$[SYSID0]/sysdata/000200bb/00000000
 
-# Version check
-if chk $[GM9VER] "v1.9.1" # v1.9.1 and below doesn't correct CMAC when writing to mounted DISA/DIFF
-	echo $[MSG_ERR_UNSUPPORTED_GM9VER]
-	goto FAIL
-elif chk $[GM9VER] "v1.9.0"
-	echo $[MSG_ERR_UNSUPPORTED_GM9VER]
-	goto FAIL
-elif chk $[GM9VER] "v1.8.0" # v1.8.0 and below doesn't support DISA/DIFF mounting
-	echo $[MSG_ERR_UNSUPPORTED_GM9VER]
-	goto FAIL
-elif chk $[GM9VER] "v1.7.1"
-	echo $[MSG_ERR_UNSUPPORTED_GM9VER]
-	goto FAIL
-elif chk $[GM9VER] "v1.7.0"
-	echo $[MSG_ERR_UNSUPPORTED_GM9VER]
-	goto FAIL
-end # I don't care below this
+# Version warning
+ask $[MSG_ASK_GM9VER]
 
 # Precheck
 if chk $[ONTYPE] O3DS
